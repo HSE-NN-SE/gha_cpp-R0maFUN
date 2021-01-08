@@ -1,8 +1,61 @@
 // Copyright @ Roman Balayan [2021]
 
 #include "duplicates.h"
+#include <conio.h>
+#include "consoleio.h"
 
 #define BLOCK_LEN 3
+
+fs::path setDir()
+{
+    fs::path cur_path = fs::current_path();
+    fs::path selected_path;
+    size_t selected_id = 0;
+    char c = '0';
+    size_t j = 0;
+    cls();
+    do {
+
+        switch (c) {
+        case 's':
+            selected_id = selected_id + 1 > j - 1 ? 0 : selected_id + 1;
+            break;
+        case 'w':
+            selected_id = selected_id == 0 ? j - 1 : selected_id - 1;
+            break;
+        case 'd':
+            cur_path = selected_path;
+            cls();
+            break;
+        case 'a':
+            cur_path = cur_path.parent_path();
+            cls();
+            break;
+        case 'e':
+            return cur_path;
+        default:
+            break;
+        }
+        
+        j = 0;
+        
+        fs::directory_iterator end_itr;
+        setCursorPosition(0, 0);
+        std::cout << "[" << cur_path.filename() << "]          " << std::endl;
+        for (fs::directory_iterator itr(cur_path); itr != end_itr; ++itr) {
+            if (fs::is_directory(itr->path())) {
+                setCursorPosition(0, j+1);
+                if (j == selected_id)
+                {
+                    selected_path = itr->path();
+                    std::cout << "-> ";
+                }
+                std::cout << itr->path().filename() << "          " << std::endl;
+                ++j;
+            }
+        }
+    } while (c = _getch());
+}
 
 std::unordered_map<size_t, std::vector<fs::directory_entry>> getFilesFromDir(fs::path dirPath)
 {
