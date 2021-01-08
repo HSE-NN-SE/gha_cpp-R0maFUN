@@ -5,30 +5,61 @@
 #include "consoleio.h"
 
 #define BLOCK_LEN 1024 // length of the blocks to hasn in bytes
+#define MAX_FILES_DISPLAY 9 // amount of directories displayed in the menu
 
 fs::path setDir()
 {
-    fs::path cur_path = fs::current_path();
-    fs::path selected_path; // path of the directory selected in the menu
-    size_t selected_id = 0; // id of the directory selected in the menu
+    fs::path cur_path = fs::current_path(); // path of the current directory
+    fs::path selected_path; // path of the sub-directory selected in the menu
+    size_t selected_id = 0; // id of the sub-directory selected in the menu
     char c = '0'; // pressed key
     size_t j = 0;
+    size_t offset = 0; // need to display maximum amount(9) of files (defined)
+    size_t total_directories = 0; // amount of sub-directories of the selected directory
     cls();
     do {
 
         switch (c) {
         case 's':
-            selected_id = selected_id + 1 > j - 1 ? 0 : selected_id + 1;
+            if (total_directories > MAX_FILES_DISPLAY) {
+                if (selected_id + offset + 1 >= total_directories) {
+                    offset = 0;
+                    selected_id = 0;
+                }
+                else if (selected_id + 1 == MAX_FILES_DISPLAY)
+                    ++offset;
+                else
+                    ++selected_id;
+            }
+            else
+                selected_id = selected_id + 1 > j - 1 ? 0 : selected_id + 1;
             break;
         case 'w':
-            selected_id = selected_id == 0 ? j - 1 : selected_id - 1;
+            if (total_directories > MAX_FILES_DISPLAY) {
+                if (selected_id == 0 && offset > 0) {
+                    offset--;
+                }
+                else if (selected_id == 0 && offset == 0)
+                {
+                    offset = total_directories - MAX_FILES_DISPLAY;
+                    selected_id = MAX_FILES_DISPLAY - 1;
+                }
+                else
+                    --selected_id;
+            }
+            else
+                selected_id = selected_id == 0 ? j - 1 : selected_id - 1;
             break;
         case 'd':
             cur_path = selected_path; // selecting and going inside the directory
+            selected_id = 0;
+            offset = 0;
             cls();
             break;
         case 'a':
             cur_path = cur_path.parent_path(); // getting back to the parent directory
+            selected_id = 0;
+            offset = 0;
             cls();
             break;
         case 'e':
@@ -38,21 +69,28 @@ fs::path setDir()
         }
         
         j = 0;
-        
+        total_directories = 0;
         // Printing sub-directories of the selected directory
         fs::directory_iterator end_itr;
         setCursorPosition(0, 0);
         std::cout << "[" << cur_path.filename() << "]          " << std::endl; // path of the directory we will return if user press 'e'
         for (fs::directory_iterator itr(cur_path); itr != end_itr; ++itr) {
             if (fs::is_directory(itr->path())) {
-                setCursorPosition(0, j+1); // works the way faster than system("cls")
-                if (j == selected_id)
+                // show only the directories in the needed range
+                if (j < offset || j - offset >= MAX_FILES_DISPLAY) {
+                    ++j;
+                    ++total_directories;
+                    continue;
+                }
+                setCursorPosition(0, j-offset+1); // works the way faster than system("cls")
+                if (j - offset == selected_id)
                 {
                     selected_path = itr->path();
                     std::cout << "-> ";
                 }
-                std::cout << itr->path().filename() << "          " << std::endl; // Spaces for cleaning the line
+                std::cout << itr->path().filename() << "                                                       " << std::endl; // Spaces for cleaning the line
                 ++j;
+                ++total_directories;
             }
         }
 
