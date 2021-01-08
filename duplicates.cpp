@@ -4,14 +4,14 @@
 #include <conio.h>
 #include "consoleio.h"
 
-#define BLOCK_LEN 3
+#define BLOCK_LEN 1024 // length of the blocks to hasn in bytes
 
 fs::path setDir()
 {
     fs::path cur_path = fs::current_path();
     fs::path selected_path; // path of the directory selected in the menu
     size_t selected_id = 0; // id of the directory selected in the menu
-    char c = '0';
+    char c = '0'; // pressed key
     size_t j = 0;
     cls();
     do {
@@ -39,21 +39,30 @@ fs::path setDir()
         
         j = 0;
         
+        // Printing sub-directories of the selected directory
         fs::directory_iterator end_itr;
         setCursorPosition(0, 0);
         std::cout << "[" << cur_path.filename() << "]          " << std::endl; // path of the directory we will return if user press 'e'
         for (fs::directory_iterator itr(cur_path); itr != end_itr; ++itr) {
             if (fs::is_directory(itr->path())) {
-                setCursorPosition(0, j+1);
+                setCursorPosition(0, j+1); // works the way faster than system("cls")
                 if (j == selected_id)
                 {
                     selected_path = itr->path();
                     std::cout << "-> ";
                 }
-                std::cout << itr->path().filename() << "          " << std::endl;
+                std::cout << itr->path().filename() << "          " << std::endl; // Spaces for cleaning the line
                 ++j;
             }
         }
+
+        // Information footer
+        std::cout << std::endl;
+        std::cout << "[w] - to go up" << std::endl
+                  << "[s] - to go down" << std::endl
+                  << "[d] - to go inside the directory" << std::endl
+                  << "[a] - to go back from the directory" << std::endl
+                  << "[e] - to select the directory" << std::endl;
     } while (c = _getch());
 }
 
