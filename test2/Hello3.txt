@@ -1,0 +1,2 @@
+Hello, world! How is it going?
+This file is not equal.
