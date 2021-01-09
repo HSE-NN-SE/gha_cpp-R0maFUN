@@ -4,10 +4,30 @@
 #include <conio.h>
 #include "consoleio.h"
 
-#define BLOCK_LEN 1024 // length of the blocks to hasn in bytes
-#define MAX_FILES_DISPLAY 9 // amount of directories displayed in the menu
+const size_t BLOCK_LEN = 1024; // length of the blocks to hasn in bytes
+const size_t MAX_FILES_DISPLAY = 9; // amount of directories displayed in the menu
 
-fs::path setDir()
+Directory::Directory(fs::path dirPath) : path(dirPath)
+{
+    if (fs::is_directory(this->path)) {
+        std::cout << this->path << " is a directory containing:\n";
+        for(fs::recursive_directory_iterator itr(this->path), end_itr; itr != end_itr; ++itr){
+            if (is_regular_file(itr->path())) { // will not save the directories
+                size_t file_size = fs::file_size(itr->path());
+                std::cout << "Found file - " << itr->path().filename() << " [" << file_size << " bytes]" << std::endl;
+                this->files.insert(std::pair<size_t, File*>(file_size, new File(*itr)));
+            }
+        }
+    }
+}
+
+Directory::~Directory()
+{
+    for (auto el : this->files)
+        delete el.second;
+}
+
+void Directory::setDir()
 {
     fs::path cur_path = fs::current_path(); // path of the current directory
     fs::path selected_path; // path of the sub-directory selected in the menu
@@ -63,11 +83,13 @@ fs::path setDir()
             cls();
             break;
         case 'e':
-            return cur_path;
+            //return cur_path;
+            this->path = cur_path;
+            return;
         default:
             break;
         }
-        
+
         j = 0;
         total_directories = 0;
         // Printing sub-directories of the selected directory
@@ -82,7 +104,7 @@ fs::path setDir()
                     ++total_directories;
                     continue;
                 }
-                setCursorPosition(0, j-offset+1); // works the way faster than system("cls")
+                setCursorPosition(0, j - offset + 1); // works the way faster than system("cls")
                 if (j - offset == selected_id)
                 {
                     selected_path = itr->path();
@@ -97,80 +119,99 @@ fs::path setDir()
         // Information footer
         std::cout << std::endl;
         std::cout << "[w] - to go up" << std::endl
-                  << "[s] - to go down" << std::endl
-                  << "[d] - to go inside the directory" << std::endl
-                  << "[a] - to go back from the directory" << std::endl
-                  << "[e] - to select the directory" << std::endl;
+            << "[s] - to go down" << std::endl
+            << "[d] - to go inside the directory" << std::endl
+            << "[a] - to go back from the directory" << std::endl
+            << "[e] - to select the directory" << std::endl;
     } while (c = _getch());
 }
 
-std::unordered_map<size_t, std::vector<fs::directory_entry>> getFilesFromDir(fs::path dirPath)
+void Directory::setFiles()
 {
-    std::unordered_map<size_t, std::vector<fs::directory_entry>> table; // will store the files in the map where key is the size of file and 
-                                                                        // value is the vector of files in the same directory with the same size
-    if (fs::is_directory(dirPath)) {
-        std::cout << dirPath << " is a directory containing:\n";
-        fs::directory_iterator end_itr;
-        for (fs::directory_iterator itr(dirPath); itr != end_itr; ++itr) {
+    if (fs::is_directory(this->path)) {
+        std::cout << this->path << " is a directory containing:\n";
+        for (fs::recursive_directory_iterator itr(this->path), end_itr; itr != end_itr; ++itr) {
             if (is_regular_file(itr->path())) { // will not save the directories
                 size_t file_size = fs::file_size(itr->path());
                 std::cout << "Found file - " << itr->path().filename() << " [" << file_size << " bytes]" << std::endl;
-                if (table.count(file_size) > 0) // if we already have the files with the same size
-                    table[file_size].push_back(*itr);
-                else
-                    table[file_size] = std::vector<fs::directory_entry>(1, *itr); // if not - creating the vector which contains single file
+                this->files.insert(std::pair<size_t, File*>(file_size, new File(*itr)));
             }
         }
     }
-    return table;
 }
 
-bool cmpFiles(fs::directory_entry file1, fs::directory_entry file2)
+void Directory::findDuplicates(Directory* secondDir)
 {
-    if (fs::file_size(file1.path()) != fs::file_size(file2.path()))
+    for (auto pair : this->files) {
+        // does second dir contain files with the same size?
+        if (secondDir->files.count(pair.first) > 0) {
+            // going through the files with the same size in the second directory
+            auto range = secondDir->files.equal_range(pair.first); // iterators of the files in the second dir with the same size
+            for (auto secDirFileItr = range.first, end_itr = range.second; secDirFileItr != end_itr; ++secDirFileItr) {
+                if (*pair.second == *secDirFileItr->second)
+                    duplicates.push_back(std::pair<File*, File*>(pair.second, secDirFileItr->second));
+            }
+        }
+    }
+}
+
+void Directory::printDuplicates()
+{
+    std::cout << this->duplicates.size() << " duplicates found:" << std::endl;
+    for (auto it = this->duplicates.begin(); it != this->duplicates.end(); ++it)
+        std::cout << it->first->getPath() << "\n" << it->second->getPath() << "\n\n";
+}
+
+bool File::operator==(File& file2)
+{
+    if (fs::file_size(this->value.path()) != fs::file_size(file2.value.path()))
         return false;
     char* buf = new char[BLOCK_LEN + 1];
-    std::ifstream is1(file1.path().c_str(), std::ifstream::binary); // input stream for the first file
-    std::ifstream is2(file2.path().c_str(), std::ifstream::binary); // input stream for the second file
-    while (!is1.eof()) {
-        is1.read(buf, BLOCK_LEN); // reading block from the first file
-        if (is1)
-            buf[BLOCK_LEN] = '\0';
-        else
-            buf[is1.gcount()] = '\0';
-        std::string hashed1 = md5(buf); // hashing the block
+    std::ifstream is1(this->value.path().c_str(), std::ifstream::binary); // input stream for the first file
+    std::ifstream is2(file2.value.path().c_str(), std::ifstream::binary); // input stream for the second file
+    size_t block_id = 0;
+    size_t blocks_amount = fs::file_size(this->value.path()) / BLOCK_LEN;
+    while (!is1.eof() && block_id < blocks_amount) {
+        std::string hashed1;
+        std::string hashed2;
 
-        is2.read(buf, BLOCK_LEN); // reading block from the second file
-        if (is2)
-            buf[BLOCK_LEN] = '\0';
+        // does we have this block?
+        if (block_id >= this->md5hashes.size())
+        {
+            is1.seekg(BLOCK_LEN * block_id); // set cursor to the begining of the needed block
+            is1.read(buf, BLOCK_LEN); // reading block from the first file
+            if (is1)
+                buf[BLOCK_LEN] = '\0';
+            else
+                buf[is1.gcount()] = '\0';
+            hashed1 = md5(buf); // hashing the block
+            this->md5hashes.push_back(hashed1); // save the hash for this file
+        }
         else
-            buf[is2.gcount()] = '\0';
-        std::string hashed2 = md5(buf); // hashing the block
+            hashed1 = this->md5hashes[block_id]; // get saved hash
+        // does we have this block?
+        if (block_id >= file2.md5hashes.size()) {
+            is2.seekg(BLOCK_LEN * block_id); // set cursor to the begining of the needed block
+            is2.read(buf, BLOCK_LEN); // reading block from the second file
+            if (is2)
+                buf[BLOCK_LEN] = '\0';
+            else
+                buf[is2.gcount()] = '\0';
+            hashed2 = md5(buf); // hashing the block
+            file2.md5hashes.push_back(hashed2);
+        }
+        else
+            hashed2 = file2.md5hashes[block_id];
         if (hashed1 != hashed2) // comparing the hashes of blocks from different files
             return false;
+        block_id++;
     }
     return true;
+
+
 }
 
-std::vector<fs::directory_entry> findDuplicates(fs::path dir1, fs::path dir2)
+fs::path File::getPath()
 {
-    std::unordered_map<size_t, std::vector<fs::directory_entry> > firstDirFiles  = getFilesFromDir(dir1);
-    std::unordered_map<size_t, std::vector<fs::directory_entry> > secondDirFiles = getFilesFromDir(dir2);
-    std::vector<fs::directory_entry> duplicates;
-
-    for (auto pair : firstDirFiles) {
-        // does second dir contain files with the same size?
-        if (secondDirFiles.count(pair.first) > 0) {
-            // going through the files with the same size in both directories
-            for (auto firstDirFile = pair.second.begin(); firstDirFile != pair.second.end(); ++firstDirFile) {
-                for (auto secondDirFile = secondDirFiles[pair.first].begin(); secondDirFile != secondDirFiles[pair.first].end(); ++secondDirFile) {
-                    if (cmpFiles(*firstDirFile, *secondDirFile)) {
-                        duplicates.push_back(*firstDirFile);
-                        duplicates.push_back(*secondDirFile);
-                    }
-                }
-            }
-        }
-    }
-    return duplicates;
+    return this->value.path();
 }

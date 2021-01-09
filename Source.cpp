@@ -9,14 +9,18 @@
 namespace fs = boost::filesystem;
 
 int main() {
-    fs::path dir1 = setDir();
-    fs::path dir2 = setDir();
 
-    std::vector<fs::directory_entry> duplicates = findDuplicates(dir1, dir2);
+    Directory dir1;
+    dir1.setDir();
+    dir1.setFiles();
 
-    std::cout << duplicates.size() / 2 << " duplicates found." << std::endl;
-    for (auto it = duplicates.begin(); it != duplicates.end(); ++it)
-        std::cout << *it << std::endl;
+    Directory dir2;
+    dir2.setDir();
+    dir2.setFiles();
+    
+    dir1.findDuplicates(&dir2);
+    dir1.printDuplicates();
+
 
     return 0;
 }

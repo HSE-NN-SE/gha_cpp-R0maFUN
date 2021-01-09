@@ -14,10 +14,36 @@
 
 namespace fs = boost::filesystem;
 
-fs::path setDir();
-std::unordered_map<size_t, std::vector<fs::directory_entry> > getFilesFromDir(fs::path dirPath);
-bool cmpFiles(fs::directory_entry file1, fs::directory_entry file2);
-std::vector<fs::directory_entry> findDuplicates(fs::path dir1, fs::path dir2);
+class File {
+private:
+    fs::directory_entry value;
+    std::vector<std::string> md5hashes;
+public:
+    File(fs::directory_entry val) : value(val) {
+
+    }
+    bool operator==(File& file2);
+    //bool cmp(File& file2, size_t threadId);
+    fs::path getPath();
+};
+
+class Directory {
+private:
+    std::unordered_multimap<size_t, File* > files; // key - size of file, value - file
+    std::vector<std::pair<File*, File*> > duplicates; // will store duplicates in the vector by pairs
+    fs::path path; // path of directory
+public:
+    Directory(){
+    
+    }
+    Directory(fs::path dirPath);
+    ~Directory();
+    void setDir();
+    void setFiles();
+    void findDuplicates(Directory* secondDir);
+    auto getDuplicates();
+    void printDuplicates();
+};
 
 #endif // _DUPLICATES_H_
 
