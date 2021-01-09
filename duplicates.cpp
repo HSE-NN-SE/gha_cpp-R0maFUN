@@ -29,8 +29,9 @@ Directory::~Directory()
 
 void Directory::setDir()
 {
-    fs::path cur_path = fs::current_path(); // path of the current directory
-    fs::path selected_path; // path of the sub-directory selected in the menu
+    fs::path* cur_path = new fs::path;
+    *cur_path = fs::current_path(); // path of the current directory
+    fs::path* selected_path = new fs::path; // path of the sub-directory selected in the menu
     size_t selected_id = 0; // id of the sub-directory selected in the menu
     char c = '0'; // pressed key
     size_t j = 0;
@@ -77,14 +78,20 @@ void Directory::setDir()
             cls();
             break;
         case 'a':
-            cur_path = cur_path.parent_path(); // getting back to the parent directory
+            *cur_path = cur_path->parent_path(); // getting back to the parent directory
             selected_id = 0;
             offset = 0;
             cls();
             break;
         case 'e':
             //return cur_path;
-            this->path = cur_path;
+            this->path = *cur_path;
+            if(cur_path == selected_path)
+                delete cur_path;
+            else {
+                delete selected_path;
+                delete cur_path;
+            }
             return;
         default:
             break;
@@ -95,8 +102,8 @@ void Directory::setDir()
         // Printing sub-directories of the selected directory
         fs::directory_iterator end_itr;
         setCursorPosition(0, 0);
-        std::cout << "[" << cur_path.filename() << "]          " << std::endl; // path of the directory we will return if user press 'e'
-        for (fs::directory_iterator itr(cur_path); itr != end_itr; ++itr) {
+        std::cout << "[" << cur_path->filename() << "]          " << std::endl; // path of the directory we will return if user press 'e'
+        for (fs::directory_iterator itr(*cur_path); itr != end_itr; ++itr) {
             if (fs::is_directory(itr->path())) {
                 // show only the directories in the needed range
                 if (j < offset || j - offset >= MAX_FILES_DISPLAY) {
@@ -107,7 +114,7 @@ void Directory::setDir()
                 setCursorPosition(0, j - offset + 1); // works the way faster than system("cls")
                 if (j - offset == selected_id)
                 {
-                    selected_path = itr->path();
+                    *selected_path = itr->path();
                     std::cout << "-> ";
                 }
                 std::cout << itr->path().filename() << "                                                       " << std::endl; // Spaces for cleaning the line
@@ -203,12 +210,14 @@ bool File::operator==(File& file2)
         else
             hashed2 = file2.md5hashes[block_id];
         if (hashed1 != hashed2) // comparing the hashes of blocks from different files
+        {
+            delete buf;
             return false;
+        }
         block_id++;
     }
+    delete buf;
     return true;
-
-
 }
 
 fs::path File::getPath()
