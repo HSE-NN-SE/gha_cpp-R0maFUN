@@ -63,12 +63,14 @@ jobs:
   sendNotify:
     runs-on: ubuntu-latest
     steps:
-      - name: sl
-        run: sleep 50
+      - name: download artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: myArt
       - name: send
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO_DEBUG }}
           token: ${{ secrets.TELEGRAM_TOKEN_DEBUG }}
           message: Balayan Roman 
-          document: myArt
+          document: test.exe
