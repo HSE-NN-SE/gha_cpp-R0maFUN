@@ -71,4 +71,4 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO_DEBUG }}
           token: ${{ secrets.TELEGRAM_TOKEN_DEBUG }}
           message: Balayan Roman 
-          document: test.exe
+          document: myArt
