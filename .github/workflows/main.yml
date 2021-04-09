@@ -58,7 +58,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: myArt
-          path: test.exe
+          path: | 
+            ./test.exe
+            ./cities1000.csv
           retention-days: 1
   sendNotify:
     runs-on: ubuntu-latest
