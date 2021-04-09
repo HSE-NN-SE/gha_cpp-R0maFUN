@@ -75,5 +75,3 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN_RELEASE }}
           message: Balayan Roman 
           document: test.exe
-          
-          
