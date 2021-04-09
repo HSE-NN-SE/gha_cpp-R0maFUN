@@ -54,4 +54,9 @@ jobs:
           cl /EHsc ./TestProject/main.cpp ./TestProject/Individ.cpp ./TestProject/Genetic.cpp ./TestProject/Generation.cpp /link /out:test.exe
       - name: ls
         run: ls
-       
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: myArt
+          path: test.exe
+          retention-days: 1
