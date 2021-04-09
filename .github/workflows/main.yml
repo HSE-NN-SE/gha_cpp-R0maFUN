@@ -51,7 +51,7 @@ jobs:
           cl
       - name: build
         run: |
-          cl /EHsc Source.cpp duplicates.cpp md5.cpp /link /out:test.exe
+          cl /EHsc ./TestProject/main.cpp ./TestProject/Individ.cpp ./TestProject/Genetic.cpp ./TestProject/Generation.cpp /link /out:test.exe
       - name: ls
         run: ls
        
