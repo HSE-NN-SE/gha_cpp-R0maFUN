@@ -60,6 +60,7 @@ jobs:
           name: myArt
           path: test.exe
           retention-days: 1
+          
       - name: send default message
       - uses: appleboy/telegram-action@master
         with:
