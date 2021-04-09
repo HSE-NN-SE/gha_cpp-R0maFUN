@@ -55,7 +55,7 @@ jobs:
       - name: ls
         run: ls
       - name: Upload Artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: myArt
           path: test.exe
@@ -65,7 +65,7 @@ jobs:
     needs: build
     steps:
       - name: download artifact
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: myArt
       - name: send
