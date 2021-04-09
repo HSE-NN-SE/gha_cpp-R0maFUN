@@ -63,6 +63,8 @@ jobs:
   sendNotify:
     runs-on: ubuntu-latest
     steps:
+      - name: sl
+        run: sleep 50
       - name: send
         uses: appleboy/telegram-action@master
         with:
