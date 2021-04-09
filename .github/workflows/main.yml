@@ -36,15 +36,22 @@ jobs:
           echo test, and deploy your project.
       - name: print_env
         run: |
-          python -v
+          python --version
           env
           
   build:
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v1
       - uses: ilammy/msvc-dev-cmd@v1
       - name: env
         run: |
           echo test >> test.txt
           ls
           cl
+      - name: build
+        run: |
+          cl /EHsc Source.cpp duplicates.cpp md5.cpp /link /out:test.exe
+      - name: ls
+        run: ls
+       
