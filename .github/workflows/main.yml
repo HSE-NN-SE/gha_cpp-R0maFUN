@@ -58,5 +58,5 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: myArt
-          path: test.exe
+          path: test.exe cities1000.csv
           retention-days: 1
