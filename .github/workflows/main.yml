@@ -59,10 +59,9 @@ jobs:
         with:
           name: myArt
           path: test.exe
-          retention-days: 1
-          
+          retention-days: 1  
       - name: send default message
-      - uses: appleboy/telegram-action@master
+        uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO_DEBUG }}
           token: ${{ secrets.TELEGRAM_TOKEN_DEBUG }}
